@@ -1,0 +1,23 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "led_handler.c"
+        "log_handler.c"
+        "wifi_handler.c"
+        "http_handler.c"
+        "user_handler.c"
+        "ota_handler.c"
+        "token_handler.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        nvs_flash
+        led_strip
+        esp_wifi
+        esp_netif
+        esp_event
+        esp_http_server
+        json
+        spiffs
+        app_update          
+        mbedtls             
+)

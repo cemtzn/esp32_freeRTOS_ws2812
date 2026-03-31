@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>LED Matrix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="login-wrap" style="touch-action:manipulation;-webkit-overflow-scrolling:touch">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="12" r="7" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M13 19.5L12 28h8l-1-8.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M10 10a6 6 0 0 1 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1>LED Matrix</h1>
+      <p class="mono" id="brand-ver">v— · ESP32</p>
+    </div>
+    <div class="field">
+      <label>Kullanici adi</label>
+      <input type="text" id="login-user" placeholder="admin veya kullanici adi"
+        autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div class="field">
+      <label>Sifre</label>
+      <input type="password" id="login-pass" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+        autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="err-msg" id="login-err">Hatali kullanici adi veya sifre</div>
+    <button class="btn-primary" onclick="doLogin()" id="login-btn">Giris Yap</button>
+    <div class="login-hint mono">WiFi: LED_Matrix &middot; 192.168.4.1</div>
+  </div>
+</div>
+
+<!-- USER PANEL -->
+<div id="screen-user" class="screen">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="led-dot" id="u-dot"></div>
+      <span class="mono topbar-status" id="u-conn-text">Baglanıyor...</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge badge-user mono" id="u-badge">user</span>
+      <button class="btn-icon" onclick="logout()">&#9211;</button>
+    </div>
+  </header>
+
+  <div class="led-preview">
+    <div class="led-strip" id="u-strip"></div>
+    <div class="mono preview-label" id="u-effect-label">SOLID</div>
+  </div>
+
+  <div class="pad">
+    <div class="effect-row">
+      <button class="effect-btn active" id="u-btn-solid" onclick="uSetEffect('solid')">
+        <span class="effect-icon">&#9679;</span><span>Solid</span>
+      </button>
+      <button class="effect-btn" id="u-btn-fade" onclick="uSetEffect('fade')">
+        <span class="effect-icon">&#9681;</span><span>Fade</span>
+      </button>
+      <button class="effect-btn" id="u-btn-rainbow" onclick="uSetEffect('rainbow')">
+        <span class="effect-icon">&#10070;</span><span>Rainbow</span>
+      </button>
+      <button class="effect-btn" id="u-btn-comet" onclick="uSetEffect('comet')">
+        <span class="effect-icon">&#9732;</span><span>Comet</span>
+      </button>
+      <button class="effect-btn" id="u-btn-wave" onclick="uSetEffect('wave')">
+        <span class="effect-icon">&#8767;</span><span>Wave</span>
+      </button>
+      <button class="effect-btn" id="u-btn-twinkle" onclick="uSetEffect('twinkle')">
+        <span class="effect-icon">&#10022;</span><span>Twinkle</span>
+      </button>
+      <button class="effect-btn" id="u-btn-fire" onclick="uSetEffect('fire')">
+        <span class="effect-icon">&#128293;</span><span>Fire</span>
+      </button>
+      <button class="effect-btn" id="u-btn-bounce" onclick="uSetEffect('bounce')">
+        <span class="effect-icon">&#9711;</span><span>Bounce</span>
+      </button>
+      <button class="effect-btn" id="u-btn-heart" onclick="uSetEffect('heart')">
+        <span class="effect-icon">&#10084;</span><span>Kalp</span>
+      </button>
+      <button class="effect-btn" id="u-btn-lightning" onclick="uSetEffect('lightning')">
+        <span class="effect-icon">&#9889;</span><span>Yıldırım</span>
+      </button>
+      <button class="effect-btn" id="u-btn-rain" onclick="uSetEffect('rain')">
+        <span class="effect-icon">&#9656;</span><span>Yagmur</span>
+      </button>
+      <button class="effect-btn" id="u-btn-dna" onclick="uSetEffect('dna')">
+        <span class="effect-icon">&#10006;</span><span>DNA</span>
+      </button>
+      <button class="effect-btn" id="u-btn-star" onclick="uSetEffect('star')">
+        <span class="effect-icon">&#9733;</span><span>Yıldız</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="pad" id="u-color-panel">
+    <div class="card">
+      <div class="card-lbl">Renk &amp; Parlaklik</div>
+      <div class="color-row">
+        <div class="color-col">
+          <label>Renk</label>
+          <input type="color" id="u-color" value="#ff6600" oninput="liveUpdate('u')">
+          <div class="presets" id="u-presets"></div>
+        </div>
+        <div class="sliders-col">
+          <div class="sl-field">
+            <div class="sl-top"><label>Parlaklik</label><span class="mono sl-val" id="u-bval">80%</span></div>
+            <input type="range" id="u-brightness" min="1" max="100" value="80" step="1"
+              oninput="document.getElementById('u-bval').textContent=this.value+'%';liveUpdate('u')">
+          </div>
+          <div class="sl-field" id="u-speed-row" style="display:none">
+            <div class="sl-top"><label>Hiz</label><span class="mono sl-val" id="u-sval">3</span></div>
+            <input type="range" id="u-speed" min="1" max="5" value="3" step="1"
+              oninput="document.getElementById('u-sval').textContent=this.value;liveUpdate('u')">
+          </div>
+        </div>
+      </div>
+      <div id="u-color2-row" style="display:none;margin-top:12px">
+        <label>2. Renk (DNA strand)</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+          <input type="color" id="u-color2" value="#0066ff" oninput="liveUpdate('u')"
+            style="width:52px;height:48px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);cursor:pointer;padding:3px;background:#1c1c1c">
+          <div class="presets" id="u-presets2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pad" id="u-rainbow-panel" style="display:none">
+    <div class="card">
+      <div class="card-lbl">Renk Gecisleri</div>
+      <p class="hint-sub">2-3 renk sec, aralarinda yumusak gecis</p>
+      <div class="stops-row" id="u-stops"></div>
+      <div class="grad-bar" id="u-grad"></div>
+      <div class="sl-field mt12">
+        <div class="sl-top"><label>Parlaklik</label><span class="mono sl-val" id="u-rb-bval">80%</span></div>
+        <input type="range" id="u-rb-brightness" min="1" max="100" value="80" step="1"
+          oninput="document.getElementById('u-rb-bval').textContent=this.value+'%';liveUpdate('u')">
+      </div>
+      <div class="sl-field">
+        <div class="sl-top"><label>Hiz</label><span class="mono sl-val" id="u-rb-sval">3</span></div>
+        <input type="range" id="u-rb-speed" min="1" max="5" value="3" step="1"
+          oninput="document.getElementById('u-rb-sval').textContent=this.value;liveUpdate('u')">
+      </div>
+    </div>
+  </div>
+
+  <div class="pad">
+    <button class="btn-primary" onclick="applyCmd('u')">Uygula</button>
+    <button class="btn-off" onclick="sendOff('u')">Kapat</button>
+  </div>
+  <p class="hint-text" id="u-hint"></p>
+
+  <div class="pad">
+    <div class="card">
+      <div class="card-lbl">Kayitli Profiller</div>
+      <div id="u-profiles-list"></div>
+      <div class="save-form" id="u-save-form" style="display:none">
+        <div class="field">
+          <label>Profil adi</label>
+          <input type="text" id="u-prof-name" placeholder="or: Aksam Modu" maxlength="15" autocomplete="off">
+        </div>
+        <div class="save-form-btns">
+          <button class="btn-primary" style="flex:1" onclick="confirmSaveProfile()">Kaydet</button>
+          <button class="btn-ghost" onclick="cancelSaveForm()">Iptal</button>
+        </div>
+      </div>
+      <button class="btn-ghost w100" id="u-new-prof-btn" onclick="showSaveForm()">+ Yeni Profil</button>
+    </div>
+  </div>
+  <div class="pad">
+    <div class="card">
+      <div class="card-lbl">Sifre Degistir</div>
+      <div class="field">
+        <label>Mevcut sifre</label>
+        <input type="password" id="pass-old" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label>Yeni sifre</label>
+        <input type="password" id="pass-new" placeholder="min 4 karakter" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label>Yeni sifre tekrar</label>
+        <input type="password" id="pass-new2" placeholder="min 4 karakter" autocomplete="new-password">
+      </div>
+      <button class="btn-primary" onclick="changePass()">Degistir</button>
+      <div class="hint-text" id="pass-hint"></div>
+    </div>
+  </div>
+  <div style="height:max(16px,env(safe-area-inset-bottom))"></div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="screen-admin" class="screen">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="led-dot" id="a-dot"></div>
+      <span class="mono topbar-status" id="a-conn-text">Baglanıyor...</span>
+    </div>
+    <div class="topbar-right">
+      <span class="badge badge-admin mono">admin</span>
+      <button class="btn-icon" onclick="logout()">&#9211;</button>
+    </div>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab(this,'atab-led')">LED</button>
+    <button class="tab" onclick="switchTab(this,'atab-test');loadUsers()">Test</button>
+    <button class="tab" onclick="switchTab(this,'atab-users');loadUsers()">Kullanici</button>
+    <button class="tab" onclick="switchTab(this,'atab-config')">Config</button>
+    <button class="tab" onclick="switchTab(this,'atab-logs')">Loglar</button>
+  </div>
+
+  <!-- TAB LED -->
+  <div id="atab-led" class="tab-content active">
+    <div class="led-preview">
+      <div class="led-strip" id="a-strip"></div>
+      <div class="mono preview-label" id="a-effect-label">SOLID</div>
+    </div>
+    <div class="pad">
+      <div class="effect-row">
+        <button class="effect-btn active" id="a-btn-solid" onclick="aSetEffect('solid')">
+          <span class="effect-icon">&#9679;</span><span>Solid</span>
+        </button>
+        <button class="effect-btn" id="a-btn-fade" onclick="aSetEffect('fade')">
+          <span class="effect-icon">&#9681;</span><span>Fade</span>
+        </button>
+        <button class="effect-btn" id="a-btn-rainbow" onclick="aSetEffect('rainbow')">
+          <span class="effect-icon">&#10070;</span><span>Rainbow</span>
+        </button>
+        <button class="effect-btn" id="a-btn-comet" onclick="aSetEffect('comet')">
+          <span class="effect-icon">&#9732;</span><span>Comet</span>
+        </button>
+        <button class="effect-btn" id="a-btn-wave" onclick="aSetEffect('wave')">
+          <span class="effect-icon">&#8767;</span><span>Wave</span>
+        </button>
+        <button class="effect-btn" id="a-btn-twinkle" onclick="aSetEffect('twinkle')">
+          <span class="effect-icon">&#10022;</span><span>Twinkle</span>
+        </button>
+        <button class="effect-btn" id="a-btn-fire" onclick="aSetEffect('fire')">
+          <span class="effect-icon">&#128293;</span><span>Fire</span>
+        </button>
+        <button class="effect-btn" id="a-btn-bounce" onclick="aSetEffect('bounce')">
+          <span class="effect-icon">&#9711;</span><span>Bounce</span>
+        </button>
+        <button class="effect-btn" id="a-btn-heart" onclick="aSetEffect('heart')">
+          <span class="effect-icon">&#10084;</span><span>Kalp</span>
+        </button>
+        <button class="effect-btn" id="a-btn-lightning" onclick="aSetEffect('lightning')">
+          <span class="effect-icon">&#9889;</span><span>Yıldırım</span>
+        </button>
+        <button class="effect-btn" id="a-btn-rain" onclick="aSetEffect('rain')">
+          <span class="effect-icon">&#9656;</span><span>Yagmur</span>
+        </button>
+        <button class="effect-btn" id="a-btn-dna" onclick="aSetEffect('dna')">
+          <span class="effect-icon">&#10006;</span><span>DNA</span>
+        </button>
+        <button class="effect-btn" id="a-btn-star" onclick="aSetEffect('star')">
+          <span class="effect-icon">&#9733;</span><span>Yıldız</span>
+        </button>
+      </div>
+    </div>
+    <div class="pad" id="a-color-panel">
+      <div class="card">
+        <div class="card-lbl">Renk &amp; Parlaklik</div>
+        <div class="color-row">
+          <div class="color-col">
+            <label>Renk</label>
+            <input type="color" id="a-color" value="#ff6600" oninput="liveUpdate('a')">
+            <div class="presets" id="a-presets"></div>
+          </div>
+          <div class="sliders-col">
+            <div class="sl-field">
+              <div class="sl-top"><label>Parlaklik</label><span class="mono sl-val" id="a-bval">80%</span></div>
+              <input type="range" id="a-brightness" min="1" max="100" value="80" step="1"
+                oninput="document.getElementById('a-bval').textContent=this.value+'%';liveUpdate('a')">
+            </div>
+            <div class="sl-field" id="a-speed-row" style="display:none">
+              <div class="sl-top"><label>Hiz</label><span class="mono sl-val" id="a-sval">3</span></div>
+              <input type="range" id="a-speed" min="1" max="5" value="3" step="1"
+                oninput="document.getElementById('a-sval').textContent=this.value;liveUpdate('a')">
+            </div>
+          </div>
+        </div>
+        <div id="a-color2-row" style="display:none;margin-top:12px">
+          <label>2. Renk (DNA strand)</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+            <input type="color" id="a-color2" value="#0066ff" oninput="liveUpdate('a')"
+              style="width:52px;height:48px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);cursor:pointer;padding:3px;background:#1c1c1c">
+            <div class="presets" id="a-presets2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pad" id="a-rainbow-panel" style="display:none">
+      <div class="card">
+        <div class="card-lbl">Renk Gecisleri</div>
+        <div class="stops-row" id="a-stops"></div>
+        <div class="grad-bar" id="a-grad"></div>
+        <div class="sl-field mt12">
+          <div class="sl-top"><label>Parlaklik</label><span class="mono sl-val" id="a-rb-bval">80%</span></div>
+          <input type="range" id="a-rb-brightness" min="1" max="100" value="80" step="1"
+            oninput="document.getElementById('a-rb-bval').textContent=this.value+'%';liveUpdate('a')">
+        </div>
+        <div class="sl-field">
+          <div class="sl-top"><label>Hiz</label><span class="mono sl-val" id="a-rb-sval">3</span></div>
+          <input type="range" id="a-rb-speed" min="1" max="5" value="3" step="1"
+            oninput="document.getElementById('a-rb-sval').textContent=this.value;liveUpdate('a')">
+        </div>
+      </div>
+    </div>
+    <div class="pad">
+      <button class="btn-primary" onclick="applyCmd('a')">Uygula</button>
+      <button class="btn-off" onclick="sendOff('a')">Kapat</button>
+    </div>
+    <p class="hint-text" id="a-hint"></p>
+  </div>
+
+  <!-- TAB TEST -->
+  <div id="atab-test" class="tab-content">
+    <div class="pad">
+      <div class="card">
+        <div class="card-lbl">Hizli Test</div>
+        <p class="hint-sub">Rengi ve hizi ayarla, moda tıkla</p>
+        <div class="test-ctrl-row">
+          <div>
+            <label>Renk</label>
+            <input type="color" id="test-color" value="#ff6600">
+          </div>
+          <div class="sl-field" style="flex:1">
+            <div class="sl-top"><label>Hiz</label><span class="mono sl-val" id="test-sval">3</span></div>
+            <input type="range" id="test-speed" min="1" max="5" value="3" step="1"
+              oninput="document.getElementById('test-sval').textContent=this.value">
+          </div>
+        </div>
+      </div>
+
+      <div class="test-grid">
+        <button class="test-btn tb-white" onclick="sendTest('all_white')">
+          <span class="tb-glyph">&#9728;</span>
+          <span class="tb-name">Hepsini Yak</span>
+          <span class="mono tb-sub">beyaz %100</span>
+        </button>
+        <button class="test-btn tb-chase" onclick="sendTest('chase')">
+          <span class="tb-glyph">&#8594;</span>
+          <span class="tb-name">Sirayla</span>
+          <span class="mono tb-sub">chase efekti</span>
+        </button>
+        <button class="test-btn tb-flash" onclick="sendTest('flash')">
+          <span class="tb-glyph">&#9889;</span>
+          <span class="tb-name">Flash</span>
+          <span class="mono tb-sub">yanik/sondur</span>
+        </button>
+        <button class="test-btn tb-random" onclick="sendTest('random')">
+          <span class="tb-glyph">&#10022;</span>
+          <span class="tb-name">Rastgele</span>
+          <span class="mono tb-sub">renkli kaos</span>
+        </button>
+        <button class="test-btn tb-off" onclick="sendTest('all_off')">
+          <span class="tb-glyph">&#9711;</span>
+          <span class="tb-name">Sondur</span>
+          <span class="mono tb-sub">tumu kapat</span>
+        </button>
+      </div>
+      <p class="hint-text" id="test-hint"></p>
+    </div>
+  </div>
+
+  <!-- TAB KULLANICILAR -->
+  <div id="atab-users" class="tab-content">
+    <div class="pad">
+      <div class="card">
+        <div class="card-lbl">Kullanicilar <span class="mono dim" id="users-count">(0/3)</span></div>
+        <div id="users-list"><p class="hint-sub">Yukleniyor...</p></div>
+        <button class="btn-ghost w100 mt12" onclick="showNewUserForm()">+ Kullanici Ekle</button>
+      </div>
+
+      <div class="card" id="new-user-form" style="display:none;border-color:var(--amber)">
+        <div class="card-lbl">Yeni Kullanici</div>
+        <div class="field">
+          <label>Kullanici adi</label>
+          <input type="text" id="new-uname" placeholder="or: ali" maxlength="16" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Sifre</label>
+          <input type="password" id="new-upass" placeholder="min 4 karakter" autocomplete="new-password">
+        </div>
+        <div class="err-msg" id="new-user-err"></div>
+        <div class="save-form-btns">
+          <button class="btn-primary" style="flex:1" onclick="createUser()">Olustur</button>
+          <button class="btn-ghost" onclick="cancelNewUser()">Iptal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CONFIG -->
+  <div id="atab-config" class="tab-content">
+    <div class="pad">
+      <div class="card">
+        <div class="card-lbl">LED Dizisi</div>
+        <p class="hint-sub">0x0 = LED bagli degil</p>
+        <div class="config-grid">
+          <div class="field">
+            <label>Satir</label>
+            <input type="number" id="cfg-rows" min="0" max="32" value="1" oninput="updateCfgTotal()">
+          </div>
+          <div class="config-x mono">x</div>
+          <div class="field">
+            <label>Sutun</label>
+            <input type="number" id="cfg-cols" min="0" max="32" value="8" oninput="updateCfgTotal()">
+          </div>
+        </div>
+        <div class="mono hint-sub" id="cfg-total">Toplam: 8 LED</div>
+
+        <div class="field" style="margin-top:14px">
+          <label>GPIO Pin</label>
+          <select id="cfg-gpio" class="cfg-select">
+            <option value="2">GPIO 2</option>
+            <option value="4">GPIO 4</option>
+            <option value="5">GPIO 5</option>
+            <option value="12">GPIO 12</option>
+            <option value="13">GPIO 13</option>
+            <option value="14">GPIO 14</option>
+            <option value="15">GPIO 15</option>
+            <option value="16">GPIO 16</option>
+            <option value="17">GPIO 17</option>
+            <option value="18" selected>GPIO 18 (varsayilan)</option>
+            <option value="19">GPIO 19</option>
+            <option value="21">GPIO 21</option>
+            <option value="22">GPIO 22</option>
+            <option value="23">GPIO 23</option>
+            <option value="25">GPIO 25</option>
+            <option value="26">GPIO 26</option>
+            <option value="27">GPIO 27</option>
+            <option value="32">GPIO 32</option>
+            <option value="33">GPIO 33</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>LED Model</label>
+          <div class="model-row">
+            <button class="model-btn active" id="model-ws2812" onclick="selectModel(0)">WS2812B</button>
+            <button class="model-btn" id="model-ws2811" onclick="selectModel(1)">WS2811</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-lbl">Admin Sifresi (onay)</div>
+        <div class="field">
+          <label>Mevcut admin sifresi</label>
+          <input type="password" id="cfg-pass" placeholder="admin1234" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" onclick="saveConfig()">Kaydet</button>
+        <div class="hint-text" id="cfg-hint"></div>
+      </div>
+      <div class="card">
+        <div class="card-lbl">Cihaz Bilgisi</div>
+        <div class="info-table">
+          <div class="info-row"><span class="dim mono micro">Firmware</span><span class="mono micro" id="sys-fw">-</span></div>
+          <div class="info-row"><span class="dim mono micro">IP</span><span class="mono micro">192.168.4.1</span></div>
+          <div class="info-row"><span class="dim mono micro">SSID</span><span class="mono micro">LED_Matrix</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-lbl">OTA Guncelleme</div>
+        <p class="hint-sub">Admin sifresiyle onaylanir, ESP32 yeniden baslar</p>
+        <div class="field">
+          <label>Admin sifresi</label>
+          <input type="password" id="ota-pass" placeholder="admin1234" autocomplete="current-password">
+        </div>
+        <div class="field">
+          <label>.bin dosyasi</label>
+          <input type="file" id="ota-file" accept=".bin">
+        </div>
+        <div id="ota-bar-wrap" style="display:none;margin:8px 0">
+          <div class="ota-bar-bg">
+            <div class="ota-bar-fill" id="ota-bar"></div>
+          </div>
+        </div>
+        <div class="hint-text" id="ota-hint"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-primary" style="flex:1" onclick="startOTA()">Guncelle</button>
+          <button class="btn-ghost" onclick="abortOTA()">Iptal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB LOGLAR -->
+  <div id="atab-logs" class="tab-content">
+    <div class="log-toolbar">
+      <div class="log-filters">
+        <button class="lf active" onclick="filterLogs('all',this)">Tumu</button>
+        <button class="lf lf-info"  onclick="filterLogs('INFO',this)">INFO</button>
+        <button class="lf lf-warn"  onclick="filterLogs('WARN',this)">WARN</button>
+        <button class="lf lf-error" onclick="filterLogs('ERROR',this)">ERR</button>
+      </div>
+      <button class="btn-small" onclick="clearLogs()">Temizle</button>
+    </div>
+    <div class="log-box" id="log-box"></div>
+  </div>
+
+  <div style="height:max(16px,env(safe-area-inset-bottom))"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
